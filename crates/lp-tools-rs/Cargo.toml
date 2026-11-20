@@ -1,0 +1,43 @@
+[package]
+name = "lp-tools-rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+description = "Pure Rust Android dynamic partition CLI suite (lpmake, lpunpack, lpdump, lpadd, lpflash)"
+keywords = ["android", "lpmake", "lpunpack", "lpdump", "fastboot"]
+categories = ["command-line-utilities", "filesystem"]
+
+[lib]
+name = "lp_tools"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lpmake"
+path = "src/bin/lpmake.rs"
+
+[[bin]]
+name = "lpunpack"
+path = "src/bin/lpunpack.rs"
+
+[[bin]]
+name = "lpdump"
+path = "src/bin/lpdump.rs"
+
+[[bin]]
+name = "lpadd"
+path = "src/bin/lpadd.rs"
+
+[[bin]]
+name = "lpflash"
+path = "src/bin/lpflash.rs"
+
+[dependencies]
+lp-sparse-rs.workspace = true
+liblp-rs.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+indicatif.workspace = true
+serde_json.workspace = true

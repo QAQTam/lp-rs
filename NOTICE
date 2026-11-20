@@ -1,0 +1,14 @@
+lp-rs
+Copyright 2026 QAQTam
+
+This project is a pure Rust reimplementation of Android's Logical Partition
+(`liblp`), Android Sparse (`libsparse`), and Dynamic Partition CLI tools
+(`partition_tools`: lpmake, lpunpack, lpdump, lpadd, lpflash).
+
+Binary formats, metadata structures, and behavioral specifications are based
+on the Android Open Source Project (AOSP), licensed under the Apache License,
+Version 2.0:
+  - platform/system/core/fs_mgr/liblp
+  - platform/system/core/libsparse
+  - platform/system/extras/partition_tools
+Copyright (C) 2010-2024 The Android Open Source Project

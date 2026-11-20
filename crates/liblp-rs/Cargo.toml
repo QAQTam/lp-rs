@@ -1,0 +1,25 @@
+[package]
+name = "liblp-rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+description = "Pure Rust implementation of Android Logical Partition library (liblp) for super.img"
+keywords = ["android", "liblp", "super", "dynamic-partitions", "fastboot"]
+categories = ["filesystem", "parsing"]
+
+[lib]
+name = "liblp"
+
+[dependencies]
+lp-sparse-rs.workspace = true
+serde = { workspace = true, optional = true }
+sha2.workspace = true
+thiserror.workspace = true
+zerocopy.workspace = true
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
