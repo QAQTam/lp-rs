@@ -1,5 +1,9 @@
 # lp-rs
 
+[![CI](https://github.com/QAQTam/lp-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/QAQTam/lp-rs/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/lp-tools-rs.svg)](https://crates.io/crates/lp-tools-rs)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 Pure Rust reimplementation of Android's Logical Partition suite (`liblp`, `libsparse`, and `partition_tools`) with **zero C/C++ build dependencies** — compiles natively on Windows (MSVC), Linux, and macOS.
 
 ## Workspace Crates
