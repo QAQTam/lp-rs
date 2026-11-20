@@ -14,9 +14,9 @@ pub fn align_to(value: u64, alignment: u64) -> Result<u64> {
     if rem == 0 {
         return Ok(value);
     }
-    value
-        .checked_add(alignment - rem)
-        .ok_or_else(|| LpError::InvalidArgument(format!("integer overflow aligning {value} to {alignment}")))
+    value.checked_add(alignment - rem).ok_or_else(|| {
+        LpError::InvalidArgument(format!("integer overflow aligning {value} to {alignment}"))
+    })
 }
 
 pub fn get_primary_geometry_offset() -> u64 {

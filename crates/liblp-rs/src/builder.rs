@@ -309,7 +309,9 @@ impl MetadataBuilder {
             let group_name = metadata
                 .groups
                 .get(p.group_index as usize)
-                .ok_or_else(|| LpError::InvalidMetadata("partition group index out of bounds".into()))?
+                .ok_or_else(|| {
+                    LpError::InvalidMetadata("partition group index out of bounds".into())
+                })?
                 .name
                 .clone();
             builder.add_partition(&p.name, &group_name, p.attributes)?;
@@ -558,9 +560,9 @@ impl MetadataBuilder {
         let cand_start = end_sector;
         let cand_end = end_sector + extra;
 
-        let overlaps_free = free_list.iter().any(|r| {
-            r.device_index == device_index && cand_start < r.end && r.start < cand_end
-        });
+        let overlaps_free = free_list
+            .iter()
+            .any(|r| r.device_index == device_index && cand_start < r.end && r.start < cand_end);
         let overlaps_alloc = self.partitions.iter().any(|p| {
             p.extents.iter().any(|e| match *e {
                 Extent::Linear {
@@ -657,7 +659,10 @@ impl MetadataBuilder {
     pub fn allocatable_space(&self) -> u64 {
         self.block_devices
             .iter()
-            .map(|d| d.size.saturating_sub(d.first_logical_sector * LP_SECTOR_SIZE))
+            .map(|d| {
+                d.size
+                    .saturating_sub(d.first_logical_sector * LP_SECTOR_SIZE)
+            })
             .sum()
     }
 
@@ -690,10 +695,9 @@ impl MetadataBuilder {
     pub fn export(&self) -> Result<LpMetadata> {
         self.validate_groups()?;
 
-        let mut minor_version = self.minor_version.clamp(
-            LP_METADATA_MINOR_VERSION_MIN,
-            LP_METADATA_MINOR_VERSION_MAX,
-        );
+        let mut minor_version = self
+            .minor_version
+            .clamp(LP_METADATA_MINOR_VERSION_MIN, LP_METADATA_MINOR_VERSION_MAX);
 
         let mut block_devices = Vec::with_capacity(self.block_devices.len());
         for dev in &self.block_devices {
@@ -753,9 +757,9 @@ impl MetadataBuilder {
                 minor_version = minor_version.max(LP_METADATA_VERSION_FOR_UPDATED_ATTR);
             }
 
-            let group_index = *group_indices.get(&part.group_name).ok_or_else(|| {
-                LpError::NotFound(format!("unknown group '{}'", part.group_name))
-            })?;
+            let group_index = *group_indices
+                .get(&part.group_name)
+                .ok_or_else(|| LpError::NotFound(format!("unknown group '{}'", part.group_name)))?;
 
             let first_extent_index = extents.len() as u32;
             let num_extents = part.extents.len() as u32;
@@ -830,7 +834,8 @@ impl MetadataBuilder {
             groups: LpMetadataTableDescriptor {
                 offset: 0,
                 num_entries: groups.len() as u32,
-                entry_size: std::mem::size_of::<crate::format::LpMetadataPartitionGroupRaw>() as u32,
+                entry_size: std::mem::size_of::<crate::format::LpMetadataPartitionGroupRaw>()
+                    as u32,
             },
             block_devices: LpMetadataTableDescriptor {
                 offset: 0,
@@ -852,8 +857,11 @@ impl MetadataBuilder {
 }
 
 fn verify_device_properties(dev: &BlockDeviceInfo) -> Result<()> {
-    if dev.logical_block_size == 0 || dev.logical_block_size as u64 % LP_SECTOR_SIZE != 0 {
-        let suggested = align_to(dev.logical_block_size.max(1) as u64, LP_SECTOR_SIZE).unwrap_or(4096);
+    if dev.logical_block_size == 0
+        || !(dev.logical_block_size as u64).is_multiple_of(LP_SECTOR_SIZE)
+    {
+        let suggested =
+            align_to(dev.logical_block_size.max(1) as u64, LP_SECTOR_SIZE).unwrap_or(4096);
         return Err(LpError::AlignmentError {
             field: format!("block device '{}' logical_block_size", dev.partition_name),
             value: dev.logical_block_size as u64,
@@ -861,7 +869,7 @@ fn verify_device_properties(dev: &BlockDeviceInfo) -> Result<()> {
             suggested,
         });
     }
-    if dev.size % dev.logical_block_size as u64 != 0 {
+    if !dev.size.is_multiple_of(dev.logical_block_size as u64) {
         let suggested = align_to(dev.size, dev.logical_block_size as u64).unwrap_or(dev.size);
         return Err(LpError::AlignmentError {
             field: format!("block device '{}' size", dev.partition_name),
@@ -870,7 +878,7 @@ fn verify_device_properties(dev: &BlockDeviceInfo) -> Result<()> {
             suggested,
         });
     }
-    if dev.alignment_offset as u64 % LP_SECTOR_SIZE != 0 {
+    if !(dev.alignment_offset as u64).is_multiple_of(LP_SECTOR_SIZE) {
         let suggested = align_to(dev.alignment_offset as u64, LP_SECTOR_SIZE).unwrap_or(0);
         return Err(LpError::AlignmentError {
             field: format!("block device '{}' alignment_offset", dev.partition_name),
@@ -879,7 +887,7 @@ fn verify_device_properties(dev: &BlockDeviceInfo) -> Result<()> {
             suggested,
         });
     }
-    if dev.alignment as u64 % LP_SECTOR_SIZE != 0 {
+    if !(dev.alignment as u64).is_multiple_of(LP_SECTOR_SIZE) {
         let suggested = align_to(dev.alignment as u64, LP_SECTOR_SIZE).unwrap_or(0);
         return Err(LpError::AlignmentError {
             field: format!("block device '{}' alignment", dev.partition_name),

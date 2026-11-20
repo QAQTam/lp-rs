@@ -62,8 +62,7 @@ fn main() -> Result<()> {
             targets.push(part);
         }
     }
-    if !extract_all && !wanted.is_empty() {
-        let missing = wanted.into_iter().next().unwrap();
+    if !extract_all && let Some(missing) = wanted.into_iter().next() {
         bail!("partition not found in super image: {missing}");
     }
 

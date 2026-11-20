@@ -116,7 +116,7 @@ fn parse_geometry_at_offset(buffer: &[u8], offset: u64) -> Result<LpMetadataGeom
     }
 
     let metadata_max_size = raw.metadata_max_size.get();
-    if metadata_max_size as u64 % LP_SECTOR_SIZE != 0 {
+    if !(metadata_max_size as u64).is_multiple_of(LP_SECTOR_SIZE) {
         return Err(LpError::InvalidGeometry(format!(
             "metadata_max_size ({metadata_max_size}) is not sector-aligned (multiple of {LP_SECTOR_SIZE})"
         )));
@@ -545,8 +545,7 @@ pub fn read_metadata_from_reader<R: Read + Seek>(
     if slot_number >= geometry.metadata_slot_count {
         return Err(LpError::InvalidArgument(format!(
             "slot_number ({slot_number}) >= metadata_slot_count ({}); valid slots: 0..{}",
-            geometry.metadata_slot_count,
-            geometry.metadata_slot_count
+            geometry.metadata_slot_count, geometry.metadata_slot_count
         )));
     }
 

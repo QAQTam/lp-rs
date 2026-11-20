@@ -15,9 +15,7 @@ use crate::format::{
     LpMetadataGeometryRaw, LpMetadataHeaderRaw, LpMetadataPartitionGroupRaw,
     LpMetadataPartitionRaw, LpMetadataTableDescriptorRaw, encode_fixed_str,
 };
-use crate::reader::{
-    read_backup_metadata, read_logical_partition_geometry, read_primary_metadata,
-};
+use crate::reader::{read_backup_metadata, read_logical_partition_geometry, read_primary_metadata};
 use crate::utility::{
     align_to, compute_partition_size, get_backup_geometry_offset, get_backup_metadata_offset,
     get_metadata_super_block_device, get_primary_geometry_offset, get_primary_metadata_offset,
@@ -227,28 +225,32 @@ impl<'a> ImageBuilder<'a> {
         sparsify: bool,
     ) -> Result<Self> {
         let total_size = get_total_super_partition_size(metadata);
-        if block_size == 0 || block_size as u64 % LP_SECTOR_SIZE != 0 {
+        if block_size == 0 || !(block_size as u64).is_multiple_of(LP_SECTOR_SIZE) {
             return Err(LpError::InvalidArgument(format!(
                 "block_size ({block_size}) must be a multiple of {LP_SECTOR_SIZE}"
             )));
         }
-        if total_size % block_size as u64 != 0 {
+        if !total_size.is_multiple_of(block_size as u64) {
             return Err(LpError::InvalidArgument(format!(
                 "total super size ({total_size}) must be a multiple of block_size ({block_size})"
             )));
         }
-        if metadata.geometry.metadata_max_size % block_size != 0 {
+        if !metadata
+            .geometry
+            .metadata_max_size
+            .is_multiple_of(block_size)
+        {
             return Err(LpError::InvalidArgument(format!(
                 "metadata_max_size ({}) must be a multiple of block_size ({block_size})",
                 metadata.geometry.metadata_max_size
             )));
         }
-        if LP_METADATA_GEOMETRY_SIZE as u32 % block_size != 0 {
+        if !(LP_METADATA_GEOMETRY_SIZE as u32).is_multiple_of(block_size) {
             return Err(LpError::InvalidArgument(format!(
                 "geometry size ({LP_METADATA_GEOMETRY_SIZE}) not aligned to block_size ({block_size})"
             )));
         }
-        if LP_PARTITION_RESERVED_BYTES % block_size as u64 != 0 {
+        if !LP_PARTITION_RESERVED_BYTES.is_multiple_of(block_size as u64) {
             return Err(LpError::InvalidArgument(format!(
                 "reserved bytes ({LP_PARTITION_RESERVED_BYTES}) not aligned to block_size ({block_size})"
             )));
@@ -259,10 +261,7 @@ impl<'a> ImageBuilder<'a> {
             device_images.push(SparseBuilder::new(block_size, dev.size)?);
         }
 
-        let images = images
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect();
+        let images = images.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
 
         Ok(Self {
             metadata,
@@ -275,7 +274,7 @@ impl<'a> ImageBuilder<'a> {
 
     fn sector_to_block(&self, sector: u64) -> Result<u64> {
         let bytes = sector * LP_SECTOR_SIZE;
-        if bytes % self.block_size as u64 != 0 {
+        if !bytes.is_multiple_of(self.block_size as u64) {
             return Err(LpError::InvalidMetadata(format!(
                 "sector {sector} is not aligned to block_size {}",
                 self.block_size
@@ -303,7 +302,7 @@ impl<'a> ImageBuilder<'a> {
                     "extents must appear in strictly increasing sector order".into(),
                 ));
             }
-            if (ext.num_sectors * LP_SECTOR_SIZE) % self.block_size as u64 != 0 {
+            if !(ext.num_sectors * LP_SECTOR_SIZE).is_multiple_of(self.block_size as u64) {
                 return Err(LpError::InvalidMetadata(
                     "extent size must be aligned to block_size".into(),
                 ));
@@ -441,7 +440,14 @@ impl<'a> ImageBuilder<'a> {
                     }
                 }
             } else {
-                self.stream_into_extents(&mut sparse, logical_len, None, &extents, &part.name, img_path)?;
+                self.stream_into_extents(
+                    &mut sparse,
+                    logical_len,
+                    None,
+                    &extents,
+                    &part.name,
+                    img_path,
+                )?;
             }
         } else {
             let file_len = reader.seek(SeekFrom::End(0))?;
@@ -594,7 +600,8 @@ impl<'a> ImageBuilder<'a> {
     pub fn export(&self, path: &Path) -> Result<()> {
         if self.device_images.len() > 1 {
             return Err(LpError::InvalidArgument(
-                "cannot export multi-device metadata to a single file; use write_split_image_files".into(),
+                "cannot export multi-device metadata to a single file; use write_split_image_files"
+                    .into(),
             ));
         }
         let mut out = BufWriter::new(File::create(path)?);
@@ -678,7 +685,7 @@ impl<'a> ExtentMapper<'a> {
             let avail = ext_bytes - self.offset_in_extent;
             let take = max_bytes.min(avail);
             let byte_pos = ext.target_data * LP_SECTOR_SIZE + self.offset_in_extent;
-            if byte_pos % self.block_size as u64 != 0 {
+            if !byte_pos.is_multiple_of(self.block_size as u64) {
                 return Err(LpError::InvalidMetadata(
                     "extent byte offset not aligned to block_size".into(),
                 ));
@@ -797,7 +804,10 @@ fn write_metadata_slot(
 /// (equivalent to AOSP `FlashPartitionTable` / `lpflash`).
 pub fn flash_partition_table(target_path: &Path, metadata: &LpMetadata) -> Result<()> {
     let metadata_blob = validate_and_serialize_metadata(metadata)?;
-    let mut file = OpenOptions::new().read(true).write(true).open(target_path)?;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(target_path)?;
 
     let zeroes = [0u8; LP_PARTITION_RESERVED_BYTES as usize];
     file.seek(SeekFrom::Start(0))?;
@@ -826,7 +836,10 @@ pub fn update_partition_table(
     slot_number: u32,
 ) -> Result<()> {
     let blob = validate_and_serialize_metadata(metadata)?;
-    let mut file = OpenOptions::new().read(true).write(true).open(target_path)?;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(target_path)?;
 
     let old_geometry = read_logical_partition_geometry(&mut file)?;
     let g = &metadata.geometry;
@@ -986,9 +999,11 @@ pub fn update_sparse_super_image(
     // 3) newly added partition's extents (if image_path is specified)
     let mut overwritten: Vec<(u64, u64)> = vec![(0, meta_end_block)];
     let backup_start_bytes = get_backup_metadata_offset(&new_metadata.geometry, 0);
-    let backup_end_bytes =
-        backup_start_bytes + (new_metadata.geometry.metadata_max_size as u64) * (slots_to_update as u64);
-    if backup_start_bytes % block_size as u64 != 0 || backup_end_bytes % block_size as u64 != 0 {
+    let backup_end_bytes = backup_start_bytes
+        + (new_metadata.geometry.metadata_max_size as u64) * (slots_to_update as u64);
+    if !backup_start_bytes.is_multiple_of(block_size as u64)
+        || !backup_end_bytes.is_multiple_of(block_size as u64)
+    {
         return Err(LpError::InvalidMetadata(
             "backup metadata region is not aligned to sparse block_size".into(),
         ));
@@ -1077,7 +1092,11 @@ pub fn update_sparse_super_image(
             .partitions
             .iter()
             .find(|p| p.name == part_name)
-            .unwrap();
+            .ok_or_else(|| {
+                LpError::InvalidMetadata(format!(
+                    "newly added partition '{part_name}' missing from metadata"
+                ))
+            })?;
         img_builder.add_partition_image(part, img)?;
     }
 

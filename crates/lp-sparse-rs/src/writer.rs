@@ -43,7 +43,7 @@ pub struct SparseBuilder {
 impl SparseBuilder {
     /// Creates a new `SparseBuilder` for an image of `total_size` bytes with `block_size` blocks.
     pub fn new(block_size: u32, total_size: u64) -> Result<Self> {
-        if block_size == 0 || block_size % 4 != 0 {
+        if block_size == 0 || !block_size.is_multiple_of(4) {
             return Err(SparseError::InvalidArgument(format!(
                 "block_size ({block_size}) must be a non-zero multiple of 4"
             )));
@@ -307,15 +307,14 @@ impl SparseBuilder {
                 }
                 BackingSource::Fill(val) => {
                     let total_sz = (CHUNK_HEADER_SIZE + 4) as u32;
-                    let ch = ChunkHeaderRaw::new(CHUNK_TYPE_FILL, region.num_blocks as u32, total_sz);
+                    let ch =
+                        ChunkHeaderRaw::new(CHUNK_TYPE_FILL, region.num_blocks as u32, total_sz);
                     writer.write_all(ch.as_bytes())?;
                     let val_bytes = val.to_le_bytes();
                     writer.write_all(&val_bytes)?;
                     let byte_len = region.num_blocks * self.block_size as u64;
                     if let Some(h) = &mut hasher {
-                        for slot in io_buf.chunks_exact_mut(4) {
-                            slot.copy_from_slice(&val_bytes);
-                        }
+                        io_buf.as_chunks_mut::<4>().0.fill(val_bytes);
                         let mut rem = byte_len;
                         while rem > 0 {
                             let n = (rem as usize).min(io_buf.len());
@@ -407,9 +406,7 @@ impl SparseBuilder {
                         on_bytes(byte_len);
                     } else {
                         let val_bytes = val.to_le_bytes();
-                        for slot in buf.chunks_exact_mut(4) {
-                            slot.copy_from_slice(&val_bytes);
-                        }
+                        buf.as_chunks_mut::<4>().0.fill(val_bytes);
                         let mut rem = byte_len;
                         while rem > 0 {
                             let n = (rem as usize).min(buf.len());
@@ -427,12 +424,10 @@ impl SparseBuilder {
         if self.total_size > 0 {
             writer.seek(SeekFrom::Start(self.total_size - 1))?;
             // Preserve the last byte if a region actually covered the very end.
-            let covered_end = self
-                .regions
-                .values()
-                .next_back()
-                .is_some_and(|r| (r.start_block + r.num_blocks) * self.block_size as u64 >= self.total_size
-                    && !matches!(r.source, BackingSource::Fill(0)));
+            let covered_end = self.regions.values().next_back().is_some_and(|r| {
+                (r.start_block + r.num_blocks) * self.block_size as u64 >= self.total_size
+                    && !matches!(r.source, BackingSource::Fill(0))
+            });
             if !covered_end {
                 writer.write_all(&[0u8])?;
             }
@@ -463,7 +458,7 @@ pub fn encode_raw_to_sparse<R: Read + Seek, W: Write>(
     block_size: u32,
     include_crc: bool,
 ) -> Result<()> {
-    if block_size == 0 || block_size % 4 != 0 {
+    if block_size == 0 || !block_size.is_multiple_of(4) {
         return Err(SparseError::InvalidArgument(format!(
             "block_size ({block_size}) must be a non-zero multiple of 4"
         )));
@@ -572,9 +567,7 @@ pub fn encode_raw_to_sparse<R: Read + Seek, W: Write>(
                 let val_bytes = val.to_le_bytes();
                 writer.write_all(&val_bytes)?;
                 if let Some(h) = &mut hasher {
-                    for slot in io_buf.chunks_exact_mut(4) {
-                        slot.copy_from_slice(&val_bytes);
-                    }
+                    io_buf.as_chunks_mut::<4>().0.fill(val_bytes);
                     let mut rem = blocks * block_size as u64;
                     while rem > 0 {
                         let n = (rem as usize).min(io_buf.len());
@@ -599,14 +592,11 @@ pub fn encode_raw_to_sparse<R: Read + Seek, W: Write>(
 
 /// Returns `Some(val)` if every 4-byte word in `block` equals `val`.
 pub fn uniform_fill_u32(block: &[u8]) -> Option<u32> {
-    if block.len() < 4 || block.len() % 4 != 0 {
+    if !block.len().is_multiple_of(4) {
         return None;
     }
-    let first = u32::from_le_bytes(block[..4].try_into().ok()?);
-    for chunk in block.chunks_exact(4).skip(1) {
-        if u32::from_le_bytes(chunk.try_into().ok()?) != first {
-            return None;
-        }
-    }
-    Some(first)
+    let (&first, rest) = block.as_chunks::<4>().0.split_first()?;
+    rest.iter()
+        .all(|&chunk| chunk == first)
+        .then(|| u32::from_le_bytes(first))
 }

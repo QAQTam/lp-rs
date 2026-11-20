@@ -77,7 +77,10 @@ fn main() -> Result<()> {
         "Metadata size: {} bytes",
         meta.header.header_size + meta.header.tables_size
     );
-    println!("Metadata max size: {} bytes", meta.geometry.metadata_max_size);
+    println!(
+        "Metadata max size: {} bytes",
+        meta.geometry.metadata_max_size
+    );
     println!("Metadata slot count: {}", meta.geometry.metadata_slot_count);
     println!(
         "Logical block size: {} bytes",

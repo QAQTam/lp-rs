@@ -3,7 +3,6 @@ use std::fs::{self, File};
 use std::io::{Cursor, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 
-use lp_sparse::{SparseReader, encode_raw_to_sparse};
 use liblp::{
     BlockDeviceInfo, LP_HEADER_FLAG_VIRTUAL_AB_DEVICE, LP_PARTITION_ATTR_READONLY,
     LP_PARTITION_ATTR_SLOT_SUFFIXED, LpError, MetadataBuilder, compute_partition_size,
@@ -11,6 +10,7 @@ use liblp::{
     update_partition_table, update_sparse_super_image, write_empty_image_file,
     write_partition_to_raw_super, write_to_image_file,
 };
+use lp_sparse::{SparseReader, encode_raw_to_sparse};
 
 fn temp_dir(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("lp_rs_test_{name}_{}", std::process::id()));
@@ -24,7 +24,13 @@ fn empty_super_image_and_builder_roundtrip() {
     let dir = temp_dir("empty_super");
     let out_path = dir.join("super_empty.img");
 
-    let devices = vec![BlockDeviceInfo::new("super", 128 * 1024 * 1024, 1024 * 1024, 0, 4096)];
+    let devices = vec![BlockDeviceInfo::new(
+        "super",
+        128 * 1024 * 1024,
+        1024 * 1024,
+        0,
+        4096,
+    )];
     let mut builder = MetadataBuilder::new(&devices, "super", 65536, 2).unwrap();
     builder.set_auto_slot_suffixing(true);
     builder.set_virtual_ab_device_flag(true);
@@ -32,16 +38,21 @@ fn empty_super_image_and_builder_roundtrip() {
         .add_group("qti_dynamic_partitions", 64 * 1024 * 1024)
         .unwrap();
     builder
-        .add_partition("system", "qti_dynamic_partitions", LP_PARTITION_ATTR_READONLY)
+        .add_partition(
+            "system",
+            "qti_dynamic_partitions",
+            LP_PARTITION_ATTR_READONLY,
+        )
         .unwrap();
-    builder
-        .resize_partition("system", 4 * 1024 * 1024)
-        .unwrap();
+    builder.resize_partition("system", 4 * 1024 * 1024).unwrap();
 
     let meta = builder.export().unwrap();
     assert_eq!(meta.header.minor_version, 2);
     assert_ne!(meta.header.flags & LP_HEADER_FLAG_VIRTUAL_AB_DEVICE, 0);
-    assert_ne!(meta.partitions[0].attributes & LP_PARTITION_ATTR_SLOT_SUFFIXED, 0);
+    assert_ne!(
+        meta.partitions[0].attributes & LP_PARTITION_ATTR_SLOT_SUFFIXED,
+        0
+    );
 
     write_empty_image_file(&out_path, &meta).unwrap();
 
@@ -79,7 +90,13 @@ fn full_super_make_and_read_sparse_and_raw() {
     encode_raw_to_sparse(&mut Cursor::new(&vnd_raw), &mut vnd_sparse, 4096, true).unwrap();
     fs::write(&vnd_path, &vnd_sparse).unwrap();
 
-    let devices = vec![BlockDeviceInfo::new("super", 32 * 1024 * 1024, 1024 * 1024, 0, 4096)];
+    let devices = vec![BlockDeviceInfo::new(
+        "super",
+        32 * 1024 * 1024,
+        1024 * 1024,
+        0,
+        4096,
+    )];
     let mut builder = MetadataBuilder::new(&devices, "super", 65536, 2).unwrap();
     builder.add_group("main_a", 16 * 1024 * 1024).unwrap();
     builder
@@ -150,7 +167,9 @@ fn full_super_make_and_read_sparse_and_raw() {
     builder
         .add_partition("huge", "extra", LP_PARTITION_ATTR_READONLY)
         .unwrap();
-    let super_err = builder.resize_partition("huge", 64 * 1024 * 1024).unwrap_err();
+    let super_err = builder
+        .resize_partition("huge", 64 * 1024 * 1024)
+        .unwrap_err();
     assert!(matches!(super_err, LpError::SuperOutOfSpace { .. }));
 
     let _ = fs::remove_dir_all(&dir);
@@ -190,7 +209,13 @@ fn lpflash_and_lpadd_raw_and_sparse_roundtrip() {
     let dir = temp_dir("lpflash_lpadd");
 
     // 1) Build super_empty.img and flash it onto a raw super.img file (lpflash).
-    let devices = vec![BlockDeviceInfo::new("super", 32 * 1024 * 1024, 1024 * 1024, 0, 4096)];
+    let devices = vec![BlockDeviceInfo::new(
+        "super",
+        32 * 1024 * 1024,
+        1024 * 1024,
+        0,
+        4096,
+    )];
     let mut builder = MetadataBuilder::new(&devices, "super", 65536, 2).unwrap();
     builder.add_group("main", 16 * 1024 * 1024).unwrap();
     builder
@@ -240,7 +265,8 @@ fn lpflash_and_lpadd_raw_and_sparse_roundtrip() {
     let mut b3 = MetadataBuilder::from_metadata(&read_metadata(&sparse_super, 0).unwrap()).unwrap();
     b3.add_partition("product", "main", LP_PARTITION_ATTR_READONLY)
         .unwrap();
-    b3.resize_partition("product", prod_bytes.len() as u64).unwrap();
+    b3.resize_partition("product", prod_bytes.len() as u64)
+        .unwrap();
     let meta3 = b3.export().unwrap();
     update_sparse_super_image(&sparse_super, &meta3, Some("product"), Some(&prod_path)).unwrap();
 
@@ -256,7 +282,8 @@ fn lpflash_and_lpadd_raw_and_sparse_roundtrip() {
     assert_eq!(got_odm, odm_bytes);
 
     let prod_ext = &read_sparse.extents[read_sparse.partitions[2].first_extent_index as usize];
-    sr.seek(SeekFrom::Start(prod_ext.target_data * 512)).unwrap();
+    sr.seek(SeekFrom::Start(prod_ext.target_data * 512))
+        .unwrap();
     let mut got_prod = vec![0u8; prod_bytes.len()];
     sr.read_exact(&mut got_prod).unwrap();
     assert_eq!(got_prod, prod_bytes);

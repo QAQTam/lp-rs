@@ -43,9 +43,8 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let is_empty = is_empty_super_image(&args.super_file).with_context(|| {
-        format!("failed to inspect '{}'", args.super_file.display())
-    })?;
+    let is_empty = is_empty_super_image(&args.super_file)
+        .with_context(|| format!("failed to inspect '{}'", args.super_file.display()))?;
 
     if is_empty && args.image.is_some() {
         bail!("cannot add a partition image to an empty super file");
@@ -90,7 +89,10 @@ fn main() -> Result<()> {
     if is_empty {
         write_empty_image_file(&args.super_file, &new_metadata)?;
     } else if is_sparse {
-        println!("Updating sparse super image '{}'...", args.super_file.display());
+        println!(
+            "Updating sparse super image '{}'...",
+            args.super_file.display()
+        );
         update_sparse_super_image(
             &args.super_file,
             &new_metadata,

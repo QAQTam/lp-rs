@@ -37,7 +37,9 @@ pub enum LpError {
         actual_prefix: String,
     },
 
-    #[error("failed to read LpMetadataGeometry (both primary and backup corrupted)\n  primary: {primary}\n  backup:  {backup}")]
+    #[error(
+        "failed to read LpMetadataGeometry (both primary and backup corrupted)\n  primary: {primary}\n  backup:  {backup}"
+    )]
     GeometryReadFailed {
         primary: Box<LpError>,
         backup: Box<LpError>,
@@ -82,7 +84,9 @@ pub enum LpError {
         actual_prefix: String,
     },
 
-    #[error("failed to read metadata for slot {slot} (both primary and backup failed)\n  primary: {primary}\n  backup:  {backup}")]
+    #[error(
+        "failed to read metadata for slot {slot} (both primary and backup failed)\n  primary: {primary}\n  backup:  {backup}"
+    )]
     MetadataReadFailed {
         slot: u32,
         primary: Box<LpError>,

@@ -40,12 +40,7 @@ const _: () = assert!(std::mem::size_of::<SparseHeaderRaw>() == SPARSE_HEADER_SI
 const _: () = assert!(std::mem::size_of::<ChunkHeaderRaw>() == CHUNK_HEADER_SIZE);
 
 impl SparseHeaderRaw {
-    pub fn new(
-        block_size: u32,
-        total_blocks: u32,
-        total_chunks: u32,
-        image_checksum: u32,
-    ) -> Self {
+    pub fn new(block_size: u32, total_blocks: u32, total_chunks: u32, image_checksum: u32) -> Self {
         Self {
             magic: U32::new(SPARSE_HEADER_MAGIC),
             major_version: U16::new(SPARSE_HEADER_MAJOR_VERSION),

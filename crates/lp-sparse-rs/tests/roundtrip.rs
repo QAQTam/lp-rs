@@ -1,8 +1,6 @@
 use std::io::{Cursor, Read, Seek, SeekFrom};
 
-use lp_sparse::{
-    SparseBuilder, SparseError, SparseReader, encode_raw_to_sparse, is_sparse_image,
-};
+use lp_sparse::{SparseBuilder, SparseError, SparseReader, encode_raw_to_sparse, is_sparse_image};
 
 #[test]
 fn sparse_builder_and_reader_roundtrip_with_crc() {
@@ -58,9 +56,10 @@ fn raw_to_sparse_to_raw_roundtrip() {
         *b = (i % 251) as u8;
     }
     // Put uniform fill 0xDEAD_BEEF in block 7..10
-    for chunk in raw[7 * 4096..10 * 4096].chunks_exact_mut(4) {
-        chunk.copy_from_slice(&0xDEAD_BEEFu32.to_le_bytes());
-    }
+    raw[7 * 4096..10 * 4096]
+        .as_chunks_mut::<4>()
+        .0
+        .fill(0xDEAD_BEEFu32.to_le_bytes());
 
     let mut sparse_out = Vec::new();
     encode_raw_to_sparse(&mut Cursor::new(&raw), &mut sparse_out, 4096, true).unwrap();

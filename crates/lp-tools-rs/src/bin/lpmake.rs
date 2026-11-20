@@ -29,7 +29,7 @@ struct Args {
     #[arg(short = 's', long = "metadata-slots")]
     metadata_slots: u32,
 
-    /// Add a partition: <name>:<readonly|none>:<size>[:group]
+    /// Add a partition: `<name>:<readonly|none>:<size>[:group]`
     #[arg(short = 'p', long = "partition", required = true)]
     partitions: Vec<String>,
 
@@ -53,15 +53,15 @@ struct Args {
     #[arg(short = 'S', long = "sparse")]
     sparse: bool,
 
-    /// Associate a partition image: <partition>=<file>
+    /// Associate a partition image: `<partition>=<file>`
     #[arg(short = 'i', long = "image")]
     images: Vec<String>,
 
-    /// Define a partition group: <group>:<max_size>
+    /// Define a partition group: `<group>:<max_size>`
     #[arg(short = 'g', long = "group")]
     groups: Vec<String>,
 
-    /// Add a block device: <name>:<size>[:alignment[:alignment_offset]]
+    /// Add a block device: `<name>:<size>[:alignment[:alignment_offset]]`
     #[arg(short = 'D', long = "device")]
     devices: Vec<String>,
 
@@ -101,7 +101,9 @@ fn parse_partition_spec(s: &str) -> Result<PartitionSpec> {
     let attrs = match parts[1] {
         "none" => LP_PARTITION_ATTR_NONE,
         "readonly" => LP_PARTITION_ATTR_READONLY,
-        other => bail!("unrecognized partition attribute '{other}' (expected 'none' or 'readonly')"),
+        other => {
+            bail!("unrecognized partition attribute '{other}' (expected 'none' or 'readonly')")
+        }
     };
     let size: u64 = parts[2]
         .parse()
@@ -184,7 +186,12 @@ fn main() -> Result<()> {
             .as_deref()
             .context("must specify --device-size or --device")?;
         let dev_size = if dev_size_str == "auto" {
-            calculate_auto_device_size(alignment, args.metadata_size, args.metadata_slots, &part_specs)?
+            calculate_auto_device_size(
+                alignment,
+                args.metadata_size,
+                args.metadata_slots,
+                &part_specs,
+            )?
         } else {
             let v: u64 = dev_size_str
                 .parse()
@@ -221,7 +228,9 @@ fn main() -> Result<()> {
                 LP_DEFAULT_PARTITION_ALIGNMENT
             };
             let align_off = if parts.len() >= 4 {
-                parts[3].parse().context("invalid block device alignment offset")?
+                parts[3]
+                    .parse()
+                    .context("invalid block device alignment offset")?
             } else {
                 0
             };
@@ -269,9 +278,21 @@ fn main() -> Result<()> {
 
     if !images.is_empty() || args.force_full_image {
         if block_devices.len() == 1 {
-            write_to_image_file(&args.output, &metadata, args.block_size, &images, args.sparse)?;
+            write_to_image_file(
+                &args.output,
+                &metadata,
+                args.block_size,
+                &images,
+                args.sparse,
+            )?;
         } else {
-            write_split_image_files(&args.output, &metadata, args.block_size, &images, args.sparse)?;
+            write_split_image_files(
+                &args.output,
+                &metadata,
+                args.block_size,
+                &images,
+                args.sparse,
+            )?;
         }
     } else {
         write_empty_image_file(&args.output, &metadata)?;

@@ -86,7 +86,9 @@ impl<R: Read + Seek> SparseReader<R> {
         if magic != SPARSE_HEADER_MAGIC {
             let hint = match magic {
                 0x0000_0000 => "starts with all-zero bytes (blank or uninitialized image)",
-                0x616c_4467 => "looks like a raw LpMetadataGeometry header (super_empty.img), not a sparse file",
+                0x616c_4467 => {
+                    "looks like a raw LpMetadataGeometry header (super_empty.img), not a sparse file"
+                }
                 0x414C_5030 => "looks like a raw LpMetadataHeader",
                 _ => "input appears to be a raw image or corrupted file",
             };
@@ -157,33 +159,32 @@ impl<R: Read + Seek> SparseReader<R> {
             let chunk_type = ch.chunk_type.get();
             let chunk_sz = ch.chunk_sz.get() as u64;
             let total_sz = ch.total_sz.get() as u64;
-            let payload_sz =
-                total_sz
-                    .checked_sub(chunk_hdr_sz as u64)
-                    .ok_or_else(|| SparseError::InvalidChunk {
-                        index: idx,
-                        offset: chunk_file_offset,
-                        reason: format!("total_sz ({total_sz}) < chunk_hdr_sz ({chunk_hdr_sz})"),
-                    })?;
+            let payload_sz = total_sz.checked_sub(chunk_hdr_sz as u64).ok_or_else(|| {
+                SparseError::InvalidChunk {
+                    index: idx,
+                    offset: chunk_file_offset,
+                    reason: format!("total_sz ({total_sz}) < chunk_hdr_sz ({chunk_hdr_sz})"),
+                }
+            })?;
 
-            let output_offset = out_block
-                .checked_mul(block_size as u64)
-                .ok_or_else(|| SparseError::InvalidChunk {
+            let output_offset = out_block.checked_mul(block_size as u64).ok_or_else(|| {
+                SparseError::InvalidChunk {
                     index: idx,
                     offset: chunk_file_offset,
                     reason: "output offset overflow".into(),
-                })?;
+                }
+            })?;
 
             match chunk_type {
                 CHUNK_TYPE_RAW => {
                     let expected_payload =
-                        chunk_sz
-                            .checked_mul(block_size as u64)
-                            .ok_or_else(|| SparseError::InvalidChunk {
+                        chunk_sz.checked_mul(block_size as u64).ok_or_else(|| {
+                            SparseError::InvalidChunk {
                                 index: idx,
                                 offset: chunk_file_offset,
                                 reason: "chunk byte length overflow".into(),
-                            })?;
+                            }
+                        })?;
                     if payload_sz != expected_payload {
                         return Err(SparseError::InvalidChunk {
                             index: idx,
@@ -214,14 +215,13 @@ impl<R: Read + Seek> SparseReader<R> {
                     }
                     let mut fill_bytes = [0u8; 4];
                     reader.read_exact(&mut fill_bytes)?;
-                    let byte_len =
-                        chunk_sz
-                            .checked_mul(block_size as u64)
-                            .ok_or_else(|| SparseError::InvalidChunk {
-                                index: idx,
-                                offset: chunk_file_offset,
-                                reason: "chunk byte length overflow".into(),
-                            })?;
+                    let byte_len = chunk_sz.checked_mul(block_size as u64).ok_or_else(|| {
+                        SparseError::InvalidChunk {
+                            index: idx,
+                            offset: chunk_file_offset,
+                            reason: "chunk byte length overflow".into(),
+                        }
+                    })?;
                     if byte_len > 0 {
                         chunks.push(SparseChunk::Fill {
                             output_offset,
@@ -236,19 +236,16 @@ impl<R: Read + Seek> SparseReader<R> {
                         return Err(SparseError::InvalidChunk {
                             index: idx,
                             offset: chunk_file_offset,
-                            reason: format!(
-                                "DONT_CARE payload must be 0 bytes, got {payload_sz}"
-                            ),
+                            reason: format!("DONT_CARE payload must be 0 bytes, got {payload_sz}"),
                         });
                     }
-                    let byte_len =
-                        chunk_sz
-                            .checked_mul(block_size as u64)
-                            .ok_or_else(|| SparseError::InvalidChunk {
-                                index: idx,
-                                offset: chunk_file_offset,
-                                reason: "chunk byte length overflow".into(),
-                            })?;
+                    let byte_len = chunk_sz.checked_mul(block_size as u64).ok_or_else(|| {
+                        SparseError::InvalidChunk {
+                            index: idx,
+                            offset: chunk_file_offset,
+                            reason: "chunk byte length overflow".into(),
+                        }
+                    })?;
                     if byte_len > 0 {
                         chunks.push(SparseChunk::DontCare {
                             output_offset,
@@ -362,10 +359,7 @@ impl<R: Read + Seek> SparseReader<R> {
                     fill_bytes,
                     ..
                 } => {
-                    for (i, slot) in buf.chunks_exact_mut(4).enumerate() {
-                        let _ = i;
-                        slot.copy_from_slice(&fill_bytes);
-                    }
+                    buf.as_chunks_mut::<4>().0.fill(fill_bytes);
                     let mut rem = byte_len;
                     while rem > 0 {
                         let n = (rem as usize).min(buf.len());
@@ -425,9 +419,7 @@ impl<R: Read + Seek> SparseReader<R> {
                     fill_bytes,
                     ..
                 } => {
-                    for slot in buf.chunks_exact_mut(4) {
-                        slot.copy_from_slice(&fill_bytes);
-                    }
+                    buf.as_chunks_mut::<4>().0.fill(fill_bytes);
                     let mut rem = byte_len;
                     while rem > 0 {
                         let n = (rem as usize).min(buf.len());
