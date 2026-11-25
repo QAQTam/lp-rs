@@ -1,0 +1,56 @@
+{
+  "_comment": "OnePlus CPH2487 (ColorOS 16 / VAB). Geometry extracted from official 9008 package metadata dump super_meta.10010111.raw via lpdump. Partition images use OTA dump base names (system.img -> system_a); *_b slots are zero-size placeholders as on stock.",
+  "device": {
+    "name": "super",
+    "size": 15032385536,
+    "alignment": 1048576,
+    "alignment_offset": 0,
+    "block_size": 4096
+  },
+  "metadata": {
+    "size": 65536,
+    "slots": 3,
+    "virtual_ab": true,
+    "auto_slot_suffixing": false
+  },
+  "groups": [
+    { "name": "qti_dynamic_partitions_a", "maximum_size": 15028191232 },
+    { "name": "qti_dynamic_partitions_b", "maximum_size": 15028191232 }
+  ],
+  "partitions": [
+    { "name": "system_a",        "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "system.img" },
+    { "name": "system_b",        "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "system_ext_a",    "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "system_ext.img" },
+    { "name": "system_ext_b",    "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "vendor_a",        "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "vendor.img" },
+    { "name": "vendor_b",        "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "product_a",       "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "product.img" },
+    { "name": "product_b",       "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_product_a",    "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_product.img" },
+    { "name": "my_product_b",    "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "odm_a",           "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "odm.img" },
+    { "name": "odm_b",           "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_engineering_a","attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_engineering.img" },
+    { "name": "my_engineering_b","attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "vendor_dlkm_a",   "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "vendor_dlkm.img" },
+    { "name": "vendor_dlkm_b",   "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "odm_dlkm_a",      "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "odm_dlkm.img" },
+    { "name": "odm_dlkm_b",      "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_stock_a",      "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_stock.img" },
+    { "name": "my_stock_b",      "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_heytap_a",     "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_heytap.img" },
+    { "name": "my_heytap_b",     "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_carrier_a",    "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_carrier.img" },
+    { "name": "my_carrier_b",    "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_region_a",     "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_region.img" },
+    { "name": "my_region_b",     "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_company_a",    "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_company.img" },
+    { "name": "my_company_b",    "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_preload_a",    "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_preload.img" },
+    { "name": "my_preload_b",    "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_bigball_a",    "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_bigball.img" },
+    { "name": "my_bigball_b",    "attrs": "readonly", "group": "qti_dynamic_partitions_b" },
+    { "name": "my_manifest_a",   "attrs": "readonly", "group": "qti_dynamic_partitions_a", "image": "my_manifest.img" },
+    { "name": "my_manifest_b",   "attrs": "readonly", "group": "qti_dynamic_partitions_b" }
+  ]
+}
