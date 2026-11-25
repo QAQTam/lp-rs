@@ -8,15 +8,15 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "Apache-2.0"
 authors = ["QAQTam"]
 repository = "https://github.com/QAQTam/lp-rs"
 
 [workspace.dependencies]
-lp-sparse-rs = { version = "0.1.0", path = "crates/lp-sparse-rs" }
-liblp-rs = { version = "0.1.0", path = "crates/liblp-rs" }
+lp-sparse-rs = { version = "0.2.0", path = "crates/lp-sparse-rs" }
+liblp-rs = { version = "0.2.0", path = "crates/liblp-rs" }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 crc32fast = "1.4"
