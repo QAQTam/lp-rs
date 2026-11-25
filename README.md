@@ -98,6 +98,8 @@ lpmake --config devices/cph2487.json --images-dir ./extracted_partitions --spars
 - [`third_party/aosp/PROVENANCE.md`](third_party/aosp/PROVENANCE.md) — vendored AOSP
   references, codegen recipe, and the empirically verified `CrAU` container layout.
 - Tutorial scripts: [`docs/scripts/`](docs/scripts/) (`payload2super.ps1`, `flash_super.ps1`).
+- Project handoff / onboarding state (中文, for new contributor sessions):
+  [`docs/handoff.zh-CN.md`](docs/handoff.zh-CN.md).
 
 ## License
 
