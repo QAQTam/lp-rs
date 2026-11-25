@@ -22,7 +22,7 @@ struct Args {
     #[arg(long, short = 'a')]
     extract_all: Option<PathBuf>,
 
-    /// Output file for --extract (default: <partition>.img in CWD)
+    /// Output file for --extract (default: `<partition>`.img in CWD)
     #[arg(long, short = 'o')]
     out: Option<PathBuf>,
 
