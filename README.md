@@ -13,6 +13,7 @@ Pure Rust reimplementation of Android's Logical Partition suite (`liblp`, `libsp
 | [`lp-sparse-rs`](crates/lp-sparse-rs) | `lp_sparse` | Streaming `Read + Seek` reader and file-slice `SparseBuilder` (handles >4 GiB images without loading into RAM or writing temp files). |
 | [`liblp-rs`](crates/liblp-rs) | `liblp` | Parser, validator, `MetadataBuilder`, `ImageBuilder`, `flash_partition_table`, `update_partition_table` with rich diagnostic errors. |
 | [`lp-tools-rs`](crates/lp-tools-rs) | `lpmake`, `lpunpack`, `lpdump`, `lpadd`, `lpflash` | Standalone KISS CLI tools matching AOSP `partition_tools`. |
+| [`lp-payload-rs`](crates/lp-payload-rs) | `lp_payload`, `payload-ls` | OTA `payload.bin` reader: `CrAU` header + prost `DeltaArchiveManifest`, extract with `REPLACE`/`_BZ`/`_XZ`/ZSTD/`ZERO`/`DISCARD` + per-op and per-partition SHA256 (delta ops land here next). |
 
 ## Highlights vs. Official AOSP C++ Tools
 
@@ -66,6 +67,37 @@ lpadd --readonly --replace super.img vendor_a qti_dynamic_partitions_a vendor.im
 # Flash super_empty.img metadata onto a block device or raw super image
 lpflash /dev/block/by-name/super super_empty.img
 ```
+
+## Device Config JSON (`lpmake --config`)
+
+Repetitive geometry (OPPO/OnePlus `qti_dynamic_partitions_*`, Xiaomi `super` groups, …)
+belongs in a per-device template instead of a 40-flag command line:
+
+```bash
+lpmake --config devices/cph2487.json --images-dir ./extracted_partitions --sparse -o super.img
+```
+
+- The config carries block device, metadata (size / slots / Virtual A/B flag), groups,
+  and partitions; `image` entries are filenames resolved against `--images-dir`
+  (default: the config's own directory).
+- Omit `size` and it is derived from the image file; omit `image` for the zero-size
+  `*_b` placeholders that Virtual A/B stock metadata carries.
+- Templates live in [`devices/`](devices/). Send a PR with your model's
+  `lpdump --json` output (or a super metadata dump from a firmware package) to add one.
+- `docs/scripts/payload2super.ps1` runs the full OTA flow: dump payload → drop missing
+  `my_*` stock images into the dump dir → assemble → verify every extent size against
+  the on-disk images. `docs/scripts/flash_super.ps1` flashes the result: one
+  `fastboot flash super` + the static partitions of the dump.
+
+## Documentation
+
+- **[payload.bin → super.img 完整实战（中文）](docs/payload2super.zh-CN.md)** —
+  材料清单、几何表采集、模板组装、三重验收、fastbootd 刷机与踩坑实录
+  （CPH2487 / ColorOS 16 全程实测数据）。
+- [`devices/README.md`](devices/README.md) — device template schema & capture guide.
+- [`third_party/aosp/PROVENANCE.md`](third_party/aosp/PROVENANCE.md) — vendored AOSP
+  references, codegen recipe, and the empirically verified `CrAU` container layout.
+- Tutorial scripts: [`docs/scripts/`](docs/scripts/) (`payload2super.ps1`, `flash_super.ps1`).
 
 ## License
 
